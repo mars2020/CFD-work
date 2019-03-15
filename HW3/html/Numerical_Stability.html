@@ -1,0 +1,286 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Numerical_Stability</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-03-06"><meta name="DC.source" content="Numerical_Stability.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Part 1</a></li><li><a href="#3">Part 2</a></li></ul></div><pre class="codeinput"><span class="comment">%   HW3</span>
+<span class="comment">%   Mauricio Canales</span>
+<span class="comment">%   mc63788</span>
+
+<span class="comment">%   Numerical stability Program plotted within range of stability</span>
+</pre><h2 id="2">Part 1</h2><pre class="codeinput">clear <span class="string">all</span>; close <span class="string">all</span>; clc; clf;
+
+<span class="comment">%   Initial values</span>
+<span class="comment">%   Lambda value</span>
+LM = -10;
+<span class="comment">%   range</span>
+range = 0:.01:.3;
+<span class="comment">%   input values</span>
+z = LM*range;
+
+<span class="comment">%   Stability Functions</span>
+
+<span class="comment">%   Euler Forward</span>
+EF = @(z) 1+z;
+<span class="comment">%   Euler Backward</span>
+EB = @(z) (1-z).^(-1);
+<span class="comment">%   Trapezoidal and Midpoint</span>
+T_M = @(z) (1+z/2)./(1-z/2);
+<span class="comment">%   Runge-Kutta 2</span>
+S_RK2 = @(z) 1 + z + .5*z.^2;
+<span class="comment">%   Runge-Kutta 4</span>
+S_RK4 = @(z) 1 + z + .5*z.^2 + (1/6)*z.^3 + (1/24)*z.^4;
+<span class="comment">%   Adams-Bashfort 2</span>
+S_AB2_P = @(z) (2+3*z+sqrt(9*z.^2 + 4*z + 4))/4;
+S_AB2_M = @(z) (2+3*z-sqrt(9*z.^2 + 4*z + 4))/4;
+
+<span class="comment">%   Cell array of the values of Stability functions</span>
+Stability_function = {abs(EF(z)),abs(EB(z)),abs(T_M(z)),abs(S_RK2(z)),abs(S_RK4(z)),abs(S_AB2_P(z)),abs(S_AB2_M(z))};
+
+<span class="comment">%   Stability legends</span>
+Stability_info={<span class="string">'EF'</span>,<span class="string">'EB'</span>,<span class="string">'T and M'</span>,<span class="string">'RK2'</span>,<span class="string">'RK4'</span>,<span class="string">'AB2 Root 1'</span>,<span class="string">'AB2 Root 2'</span>};
+<span class="comment">%   Plotting</span>
+figure(1)
+Plotting_Stability(Stability_function,Stability_info,range);
+hold <span class="string">off</span>
+</pre><img vspace="5" hspace="5" src="Numerical_Stability_01.png" alt=""> <h2 id="3">Part 2</h2><pre class="codeinput"><span class="comment">%   Lambda</span>
+LM = -10;
+<span class="comment">%   Function</span>
+func = @(t,y) LM*y;
+
+<span class="comment">%   Initial value</span>
+y0 = 1;
+
+<span class="comment">%   Step size                 % Method      % Range</span>
+H_1 = [.05,.2,.18,.19];      <span class="comment">% EF,RK2      % 0  to .2</span>
+H_2 = [.05,.28,.26,.279];     <span class="comment">% RK4         % 0 to .2785</span>
+H_3 = [.05,.16,.07,.12];       <span class="comment">% AB2         % 0 to .1</span>
+H_4 = [.05,.7,.2,.5];         <span class="comment">% BE,T_M      % 0 to inf</span>
+H = {H_1,H_2,H_3,H_4};
+
+<span class="comment">%   Final time</span>
+T = 1.5;
+
+<span class="comment">%   Exact solution</span>
+[X_exact,Y_exact] = ode45(func,0:T,y0);
+
+
+<span class="comment">%   Cell array of numerical methods</span>
+Methods = {@Explicit_Euler,@RK2,@RK4,@AB2,@Implicit_Euler,@Midpoint,@Trapezoidal};
+
+<span class="comment">%  Calculating numerical values at various step sizes</span>
+<span class="comment">%  Converging time steps</span>
+m = 1;
+<span class="keyword">for</span> i=1:length(Methods)
+    <span class="keyword">if</span> i&lt;=2
+        h = H{1};
+    <span class="keyword">elseif</span> i==3
+        h = H{2};
+    <span class="keyword">elseif</span> i==4
+        h = H{3};
+    <span class="keyword">else</span>
+        h = H{4};
+    <span class="keyword">end</span>
+    <span class="keyword">for</span> k=1:length(h)
+        [X_temp,Y_temp,~] = feval(Methods{i},func,h(k),T,y0);
+        Y{m}{i} = Y_temp;       <span class="comment">% k = step size</span>
+        X{m}{i} = X_temp;       <span class="comment">% i = method used</span>
+        m = m+1;
+    <span class="keyword">end</span>
+    m = 1;
+<span class="keyword">end</span>
+
+
+<span class="comment">%   plot labels</span>
+Title = {<span class="string">'Forward Euler'</span>,<span class="string">'RK2'</span>,<span class="string">'RK4'</span>,<span class="string">'AB2'</span>,<span class="string">'Backward Euler'</span>,<span class="string">'Midpoint'</span>,<span class="string">'Trapezoidal'</span>};
+<span class="keyword">for</span> i=1:length(H)
+    leg{i,1} = {<span class="string">'exact'</span>,num2str(H{i}(1)),num2str(H{i}(2))};
+    leg{i,2} = {<span class="string">'exact'</span>,num2str(H{i}(3))};
+    leg{i,3} = {<span class="string">'exact'</span>,num2str(H{i}(4))};
+<span class="keyword">end</span>
+
+<span class="comment">%   Plotting</span>
+Plotting_Functions(Methods,X,Y,X_exact,Y_exact,Title,leg)
+</pre><pre class="codeoutput">Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+Warning: Ignoring extra legend entries. 
+</pre><img vspace="5" hspace="5" src="Numerical_Stability_02.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_03.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_04.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_05.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_06.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_07.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_08.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_09.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_10.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_11.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_12.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_13.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_14.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_15.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_16.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_17.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_18.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_19.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_20.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_21.png" alt=""> <img vspace="5" hspace="5" src="Numerical_Stability_22.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%   HW3
+%   Mauricio Canales
+%   mc63788
+
+%   Numerical stability Program plotted within range of stability
+
+
+%%  Part 1
+clear all; close all; clc; clf;
+
+%   Initial values
+%   Lambda value
+LM = -10;
+%   range
+range = 0:.01:.3;
+%   input values
+z = LM*range;
+
+%   Stability Functions
+
+%   Euler Forward
+EF = @(z) 1+z;                      
+%   Euler Backward
+EB = @(z) (1-z).^(-1);                          
+%   Trapezoidal and Midpoint
+T_M = @(z) (1+z/2)./(1-z/2);        
+%   Runge-Kutta 2
+S_RK2 = @(z) 1 + z + .5*z.^2;         
+%   Runge-Kutta 4
+S_RK4 = @(z) 1 + z + .5*z.^2 + (1/6)*z.^3 + (1/24)*z.^4;   
+%   Adams-Bashfort 2                                
+S_AB2_P = @(z) (2+3*z+sqrt(9*z.^2 + 4*z + 4))/4;          
+S_AB2_M = @(z) (2+3*z-sqrt(9*z.^2 + 4*z + 4))/4;
+
+%   Cell array of the values of Stability functions
+Stability_function = {abs(EF(z)),abs(EB(z)),abs(T_M(z)),abs(S_RK2(z)),abs(S_RK4(z)),abs(S_AB2_P(z)),abs(S_AB2_M(z))};
+
+%   Stability legends
+Stability_info={'EF','EB','T and M','RK2','RK4','AB2 Root 1','AB2 Root 2'}; 
+%   Plotting
+figure(1)
+Plotting_Stability(Stability_function,Stability_info,range);
+hold off
+
+%%  Part 2
+
+%   Lambda
+LM = -10;
+%   Function
+func = @(t,y) LM*y;
+
+%   Initial value
+y0 = 1;
+
+%   Step size                 % Method      % Range
+H_1 = [.05,.2,.18,.19];      % EF,RK2      % 0  to .2
+H_2 = [.05,.28,.26,.279];     % RK4         % 0 to .2785      
+H_3 = [.05,.16,.07,.12];       % AB2         % 0 to .1
+H_4 = [.05,.7,.2,.5];         % BE,T_M      % 0 to inf
+H = {H_1,H_2,H_3,H_4};     
+
+%   Final time
+T = 1.5;
+
+%   Exact solution
+[X_exact,Y_exact] = ode45(func,0:T,y0);
+
+
+%   Cell array of numerical methods
+Methods = {@Explicit_Euler,@RK2,@RK4,@AB2,@Implicit_Euler,@Midpoint,@Trapezoidal};
+
+%  Calculating numerical values at various step sizes
+%  Converging time steps 
+m = 1;
+for i=1:length(Methods)
+    if i<=2
+        h = H{1};
+    elseif i==3
+        h = H{2};
+    elseif i==4
+        h = H{3};
+    else
+        h = H{4};
+    end
+    for k=1:length(h)
+        [X_temp,Y_temp,~] = feval(Methods{i},func,h(k),T,y0);
+        Y{m}{i} = Y_temp;       % k = step size
+        X{m}{i} = X_temp;       % i = method used
+        m = m+1;
+    end
+    m = 1;
+end
+            
+
+%   plot labels
+Title = {'Forward Euler','RK2','RK4','AB2','Backward Euler','Midpoint','Trapezoidal'};
+for i=1:length(H)
+    leg{i,1} = {'exact',num2str(H{i}(1)),num2str(H{i}(2))};
+    leg{i,2} = {'exact',num2str(H{i}(3))};
+    leg{i,3} = {'exact',num2str(H{i}(4))};
+end
+
+%   Plotting
+Plotting_Functions(Methods,X,Y,X_exact,Y_exact,Title,leg)
+
+
+
+
+
+##### SOURCE END #####
+--></body></html>
